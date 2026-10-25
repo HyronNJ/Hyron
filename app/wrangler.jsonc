@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hyron-nj",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-10-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hyron",
+      "database_id": "3bce1f63-5dfd-4c4b-8edf-a19ed99ef40e",
+    },
+  ],
+  "kv_namespaces": [{ "binding": "PHOTOS", "id": "a476232470e349988eb0037c53f3f77a" }],
+}

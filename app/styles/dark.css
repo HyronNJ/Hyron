@@ -1,0 +1,408 @@
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  color: #e6ebf3;
+  background: #0d131d;
+  --text: #e6ebf3;
+  --muted: #a2adc1;
+  --faint: #8592aa;
+  --line: #253045;
+  --line-strong: #33405a;
+  --surface: #141b27;
+  --surface-2: #1b2433;
+  --surface-3: #2a3752;
+  --canvas: #0d131d;
+  --blue: #7f9ff0;
+  --blue-soft: #1d2a4a;
+  --floating: #141b27f5;
+  --shadow: #00000066;
+  --warn-bg: #2a2312;
+  --warn-line: #5c4a22;
+  --warn-text: #e8c77a;
+  --alert-bg: #2e1717;
+  --alert-text: #f0a49c;
+}
+
+/* Base controls */
+:where([data-theme="dark"]) button:hover {
+  background-color: #1f2938;
+}
+:where([data-theme="dark"]) input,
+:where([data-theme="dark"]) select,
+:where([data-theme="dark"]) textarea {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+:where([data-theme="dark"]) ::placeholder {
+  color: #74809a;
+}
+:where([data-theme="dark"]) .skip-link {
+  background: var(--surface);
+}
+:where([data-theme="dark"]) .primary-button {
+  background: #3d6be0;
+  border-color: #3d6be0;
+  color: white;
+}
+:where([data-theme="dark"]) .primary-button:hover {
+  background: #2f59c7;
+}
+:where([data-theme="dark"]) .secondary-button {
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+:where([data-theme="dark"]) .secondary-button:hover {
+  background: var(--surface-2);
+}
+:where([data-theme="dark"]) .danger {
+  color: #f08a8a;
+}
+:where([data-theme="dark"]) .inline-error,
+:where([data-theme="dark"]) .form-error,
+:where([data-theme="dark"]) .route-error {
+  color: #f0a48c;
+}
+
+/* Sidebar, header and search */
+:where([data-theme="dark"]) .sidebar {
+  background: #101722;
+}
+:where([data-theme="dark"]) .nav-items > button,
+:where([data-theme="dark"]) .sidebar-bottom > button {
+  color: #9aa5b8;
+}
+:where([data-theme="dark"]) .sidebar button.active {
+  color: #f1f4f9;
+  background: #1f2a3d;
+}
+:where([data-theme="dark"]) .prefs-button:hover {
+  background-color: #ffffff0f;
+  color: white;
+}
+/* The navy H sits on a light tile so it stays visible on the dark rail. */
+:where([data-theme="dark"]) .brand-mark {
+  mix-blend-mode: normal;
+  box-sizing: content-box;
+  padding: 3px;
+  border-radius: 7px;
+  background: #eef2f8;
+}
+:where([data-theme="dark"]) .app-header {
+  background: var(--surface);
+}
+:where([data-theme="dark"]) .place-search {
+  color: var(--muted);
+  background: var(--surface-2);
+  border-color: var(--line);
+}
+:where([data-theme="dark"]) .place-search kbd {
+  color: var(--faint);
+}
+:where([data-theme="dark"]) .search-results {
+  background: var(--surface);
+  box-shadow: 0 8px 30px var(--shadow);
+}
+:where([data-theme="dark"]) .search-results button[aria-selected="true"] {
+  background: var(--surface-3);
+}
+
+/* Map, its tools and its overlays */
+:where([data-theme="dark"]) .map-stage {
+  background: #0d131d;
+}
+:where([data-theme="dark"]) .map-tool,
+:where([data-theme="dark"]) .map-view-select {
+  border-color: var(--line-strong);
+  background-color: var(--floating);
+  box-shadow: none;
+  color: #c4cddc;
+}
+:where([data-theme="dark"]) .map-tool[aria-pressed="true"] {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+:where([data-theme="dark"]) .layers-menu {
+  background: var(--surface);
+  box-shadow: 0 8px 25px var(--shadow);
+}
+:where([data-theme="dark"]) .map-controls {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+:where([data-theme="dark"]) .map-controls button {
+  color: var(--muted);
+}
+:where([data-theme="dark"]) .map-controls .map-3d[aria-pressed="true"] {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+:where([data-theme="dark"])
+  .map-stage
+  .maplibregl-ctrl-bottom-right
+  .maplibregl-ctrl-attrib.maplibregl-compact {
+  border-color: var(--line-strong);
+  background: var(--surface);
+}
+:where([data-theme="dark"]) .map-stage .maplibregl-ctrl-attrib-button::before {
+  background: var(--muted);
+}
+:where([data-theme="dark"])
+  .map-stage
+  .maplibregl-ctrl-attrib.maplibregl-compact-show
+  .maplibregl-ctrl-attrib-button::before {
+  background: var(--blue);
+}
+:where([data-theme="dark"])
+  .map-stage
+  .maplibregl-ctrl-attrib.maplibregl-compact
+  .maplibregl-ctrl-attrib-inner {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--muted);
+}
+:where([data-theme="dark"]) .maplibregl-ctrl-attrib a {
+  color: #c4cddc;
+}
+:where([data-theme="dark"]) .maplibregl-popup-content {
+  background: var(--surface);
+  color: var(--text);
+}
+:where([data-theme="dark"]) .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+:where([data-theme="dark"]) .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+:where([data-theme="dark"]) .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--surface);
+}
+:where([data-theme="dark"]) .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+:where([data-theme="dark"]) .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+:where([data-theme="dark"]) .maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--surface);
+}
+:where([data-theme="dark"]) .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--surface);
+}
+:where([data-theme="dark"]) .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--surface);
+}
+:where([data-theme="dark"]) .map-legend {
+  background: var(--floating);
+  border-color: var(--line-strong);
+}
+:where([data-theme="dark"]) .legend-title {
+  color: #c4cddc;
+}
+/* Matches FLOOD_RAMP_DARK and GROUND_RAMP_DARK in lib/raster.ts. */
+:where([data-theme="dark"]) .legend-gradient {
+  background: linear-gradient(90deg, #2d5c75, #50beeb, #468cf5, #6e78ff, #aa82ff);
+}
+:where([data-theme="dark"]) .legend-gradient.ground {
+  background: linear-gradient(90deg, #344a44, #68927a, #b0d2bc);
+}
+:where([data-theme="dark"]) .map-loading,
+:where([data-theme="dark"]) .map-error {
+  background: var(--surface-2);
+}
+
+/* Forecast timeline */
+:where([data-theme="dark"]) .forecast-timeline {
+  background: var(--surface);
+}
+:where([data-theme="dark"]) .play-button {
+  background: var(--surface-2);
+  color: #c4cddc;
+}
+:where([data-theme="dark"]) .rainfall-chart span,
+:where([data-theme="dark"]) .timeline-key i {
+  background: #34496b;
+}
+:where([data-theme="dark"]) .rainfall-chart .selected span,
+:where([data-theme="dark"]) .timeline-key span:nth-child(2) i {
+  background: var(--blue);
+}
+:where([data-theme="dark"]) .rainfall-chart i {
+  background: #a9c0ff;
+}
+:where([data-theme="dark"]) .hour-slider::-webkit-slider-runnable-track {
+  background: #2a3548;
+}
+:where([data-theme="dark"]) .hour-slider::-moz-range-track {
+  background: #2a3548;
+}
+:where([data-theme="dark"]) .hour-slider::-webkit-slider-thumb {
+  border-color: var(--surface);
+  background: var(--blue);
+  box-shadow: 0 0 0 1px #3b4c6b;
+}
+:where([data-theme="dark"]) .hour-slider::-moz-range-thumb {
+  border-color: var(--surface);
+  background: var(--blue);
+}
+
+/* Place panel */
+:where([data-theme="dark"]) .location-pane {
+  background: var(--surface);
+}
+:where([data-theme="dark"]) .official-status.warning {
+  border-left-color: #b7893a;
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+:where([data-theme="dark"]) .official-status.warning small {
+  color: #c9ab70;
+}
+:where([data-theme="dark"]) .official-status.warning a:hover {
+  color: #f3d898;
+}
+:where([data-theme="dark"]) .outlook-level > i {
+  background: #4d5b75;
+}
+:where([data-theme="dark"]) .outlook-level.low > i {
+  background: #50beeb;
+}
+:where([data-theme="dark"]) .outlook-level.moderate > i {
+  background: #468cf5;
+}
+:where([data-theme="dark"]) .outlook-level.high > i {
+  background: #8f7dff;
+}
+:where([data-theme="dark"]) .risk-pill,
+:where([data-theme="dark"]) .status-pill {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+:where([data-theme="dark"]) .risk-pill.high,
+:where([data-theme="dark"]) .risk-pill.moderate {
+  background: var(--blue-soft);
+  color: #a9c0ff;
+}
+
+/* Pages */
+:where([data-theme="dark"]) .area-list,
+:where([data-theme="dark"]) .content-page {
+  background: var(--canvas);
+}
+:where([data-theme="dark"]) .workspace-error {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+:where([data-theme="dark"]) .empty-state h2 {
+  color: #c4cddc;
+}
+:where([data-theme="dark"]) .about-page section p {
+  color: var(--muted);
+}
+
+/* Dialogs and forms */
+:where([data-theme="dark"]) .modal {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  box-shadow: 0 20px 70px #0009;
+}
+:where([data-theme="dark"]) .modal::backdrop {
+  background: #00000080;
+}
+:where([data-theme="dark"]) .modal-head {
+  background: var(--surface);
+}
+:where([data-theme="dark"]) .round-icon,
+:where([data-theme="dark"]) .location-confirm,
+:where([data-theme="dark"]) .panel-skeleton span {
+  background: var(--surface-2);
+}
+:where([data-theme="dark"]) .photo-drop {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+:where([data-theme="dark"]) .photo-drop > span:first-child {
+  color: var(--faint);
+}
+:where([data-theme="dark"]) .photo-remove {
+  background: var(--surface);
+}
+:where([data-theme="dark"]) .delete-confirm {
+  border-color: #5a2d2d;
+}
+:where([data-theme="dark"]) .segmented {
+  background: var(--surface-2);
+}
+:where([data-theme="dark"]) .segmented button.active {
+  background: var(--surface-3);
+  box-shadow: none;
+  color: var(--text);
+}
+
+/* Directions */
+:where([data-theme="dark"]) .route-input {
+  border-color: var(--line-strong);
+}
+:where([data-theme="dark"]) .route-options {
+  background: var(--surface);
+  box-shadow: 0 5px 18px var(--shadow);
+}
+:where([data-theme="dark"]) .route-conditions {
+  background: var(--surface-2);
+}
+:where([data-theme="dark"]) .route-option.focused {
+  border-color: #3b5384;
+  background: #18223a;
+}
+:where([data-theme="dark"]) .route-verdict {
+  color: #b4bfd2;
+}
+:where([data-theme="dark"]) .route-warning,
+:where([data-theme="dark"]) .route-why,
+:where([data-theme="dark"]) .route-scenario {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+:where([data-theme="dark"]) .route-why {
+  color: var(--muted);
+}
+:where([data-theme="dark"]) .route-coverage {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+:where([data-theme="dark"]) .route-blocked {
+  background: var(--alert-bg);
+  color: var(--alert-text);
+}
+:where([data-theme="dark"]) .route-flags li {
+  border-left-color: var(--line-strong);
+}
+:where([data-theme="dark"]) .route-flags li.hard {
+  border-color: #b86b62;
+}
+
+/* Rivers and depth charts */
+:where([data-theme="dark"]) .river-cat {
+  color: #8fa9d6;
+}
+:where([data-theme="dark"]) .depth-bar {
+  fill: #5b85c4;
+}
+:where([data-theme="dark"]) .selected .depth-bar {
+  fill: var(--blue);
+}
+:where([data-theme="dark"]) .depth-range {
+  fill: #2c3d5c;
+}
+:where([data-theme="dark"]) .depth-range.open {
+  fill: #243044;
+}
+:where([data-theme="dark"]) .depth-unknown {
+  fill: var(--line-strong);
+}
+:where([data-theme="dark"]) .depth-dry {
+  fill: #6b7890;
+}
+:where([data-theme="dark"]) .depth-cursor {
+  fill: #7f9ff01a;
+  stroke: var(--blue);
+}
+:where([data-theme="dark"]) .depth-hits button:hover {
+  background: #7f9ff01a;
+}
+
+@media (max-width: 760px) {
+  :where([data-theme="dark"]) .sidebar {
+    background: var(--surface);
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "storm": "ida",
+  "marks": [
+    {
+      "id": "queens-ct",
+      "site": "RWDN4",
+      "description": "Queens Court, Ridgewood",
+      "lat": 40.985807,
+      "lng": -74.090789,
+      "type": "Debris",
+      "quality": "Good: +/- 0.10 ft",
+      "elevation": 84.0,
+      "ground": 81.05
+    },
+    {
+      "id": "fillmore-ct-a",
+      "site": "RWDN4",
+      "description": "Fillmore Court, Paramus",
+      "lat": 40.977334,
+      "lng": -74.09135,
+      "type": "Other (Note in Description box)",
+      "quality": "Fair: +/- 0.20 ft",
+      "elevation": 73.4,
+      "ground": 73.55
+    },
+    {
+      "id": "fillmore-ct-b",
+      "site": "RWDN4",
+      "description": "Fillmore Court, Paramus",
+      "lat": 40.977418,
+      "lng": -74.091684,
+      "type": "Debris",
+      "quality": "Good: +/- 0.10 ft",
+      "elevation": 71.9,
+      "ground": 72.52
+    }
+  ]
+}
