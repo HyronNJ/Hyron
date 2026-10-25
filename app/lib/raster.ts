@@ -10,6 +10,8 @@ export type Raster = {
   set: Int16Array;
   item: Int32Array;
   sets: ScoreSet[];
+  inputs: (Cell[] | Block[])[];
+  version: number;
 };
 
 type Stop = [number, [number, number, number], number];
@@ -69,7 +71,8 @@ function build(
   rows: number,
   dLng: number,
   dLat: number,
-  at: (col: number, row: number) => [number, number] | null,
+  at:
+    ((col: number, row: number) => [number, number] | null) | { set: Int16Array; item: Int32Array },
   sets: ScoreSet[],
 ): Raster {
   const west = LATTICE.lng0 + col0 * dLng,
@@ -83,6 +86,11 @@ function build(
   for (let j = 0; j < rows; j++) {
     const lat = latOf(yN + ((yS - yN) * (j + 0.5)) / rows),
       r = Math.min(rows - 1, Math.max(0, Math.floor((lat - south) / dLat)));
+    if (typeof at !== "function") {
+      set.set(at.set.subarray(r * cols, (r + 1) * cols), j * cols);
+      item.set(at.item.subarray(r * cols, (r + 1) * cols), j * cols);
+      continue;
+    }
     for (let c = 0; c < cols; c++) {
       const hit = at(col0 + c, row0 + r);
       if (hit) {
@@ -103,9 +111,22 @@ function build(
     set,
     item,
     sets,
+    inputs: [],
+    version: 0,
   };
 }
-export function overviewRaster(blocks: Block[], scores: Float32Array | null): Raster {
+export function overviewRaster(
+  blocks: Block[],
+  scores: Float32Array | null,
+  previous?: Raster | null,
+): Raster {
+  if (previous?.inputs[0] === blocks) {
+    if (previous.sets[0].scores !== scores) {
+      previous.sets[0].scores = scores;
+      previous.version++;
+    }
+    return previous;
+  }
   const index = new Map<number, number>();
   let c0 = Infinity,
     r0 = Infinity,
@@ -119,7 +140,7 @@ export function overviewRaster(blocks: Block[], scores: Float32Array | null): Ra
     r1 = Math.max(r1, b.row);
   });
   const ground = Float32Array.from(blocks, (b) => groundScore(b.elevation));
-  return build(
+  const raster = build(
     c0,
     r0,
     c1 - c0 + 1,
@@ -132,42 +153,60 @@ export function overviewRaster(blocks: Block[], scores: Float32Array | null): Ra
     },
     [{ scores, n: blocks.length, ground }],
   );
+  raster.inputs = [blocks];
+  return raster;
 }
 export function detailRaster(
   tiles: { cells: Cell[]; scores: Float32Array | null }[],
+  previous?: Raster | null,
 ): Raster | null {
-  const index = new Map<number, [number, number]>();
+  if (
+    previous &&
+    previous.inputs.length === tiles.length &&
+    tiles.every((tile, i) => tile.cells === previous.inputs[i])
+  ) {
+    for (let i = 0; i < tiles.length; i++) {
+      if (previous.sets[i].scores !== tiles[i].scores) {
+        previous.sets[i].scores = tiles[i].scores;
+        previous.version++;
+      }
+    }
+    return previous;
+  }
   let c0 = Infinity,
     r0 = Infinity,
     c1 = -Infinity,
     r1 = -Infinity;
-  tiles.forEach((t, s) =>
-    t.cells.forEach((cell, i) => {
+  tiles.forEach((t) =>
+    t.cells.forEach((cell) => {
       const c = cell.col!,
         r = cell.row!;
-      index.set(r * 4096 + c, [s, i]);
       c0 = Math.min(c0, c);
       r0 = Math.min(r0, r);
       c1 = Math.max(c1, c);
       r1 = Math.max(r1, r);
     }),
   );
-  if (!index.size) return null;
+  if (!Number.isFinite(c0)) return null;
+  const cols = c1 - c0 + 1,
+    rows = r1 - r0 + 1;
+  const set = new Int16Array(cols * rows).fill(-1),
+    item = new Int32Array(cols * rows);
+  tiles.forEach((tile, s) =>
+    tile.cells.forEach((cell, i) => {
+      const p = (cell.row! - r0) * cols + cell.col! - c0;
+      set[p] = s;
+      item[p] = i;
+    }),
+  );
   const sets = tiles.map((t) => ({
     scores: t.scores,
     n: t.cells.length,
     ground: Float32Array.from(t.cells, (c) => groundScore(c.elevation)),
   }));
-  return build(
-    c0,
-    r0,
-    c1 - c0 + 1,
-    r1 - r0 + 1,
-    LATTICE.dLng,
-    LATTICE.dLat,
-    (c, r) => index.get(r * 4096 + c) ?? null,
-    sets,
-  );
+  const raster = build(c0, r0, cols, rows, LATTICE.dLng, LATTICE.dLat, { set, item }, sets);
+  raster.inputs = tiles.map((tile) => tile.cells);
+  return raster;
 }
 
 /** Paint a raster at a fractional hour: each area's signal is blended between the two nearest hours. */

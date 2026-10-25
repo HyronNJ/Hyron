@@ -123,24 +123,40 @@ export function useStatewide(
   }, [weather, base, count, model]);
 
   const detail = !!view && view.zoom >= DETAIL_ZOOM;
-  const keys = useMemo(() => (detail && view ? tilesInView(view.bounds) : []), [detail, view]);
+  const loadKeys = useMemo(
+    () => (view && view.zoom >= DETAIL_ZOOM - 0.5 ? tilesInView(view.bounds, 36, 1).sort() : []),
+    [view],
+  );
+  const loadList = loadKeys.join(",");
+  const keys = useMemo(
+    () => (detail && view ? tilesInView(view.bounds, 24).sort() : []),
+    [detail, view],
+  );
   const keyList = keys.join(",");
 
   useEffect(() => {
     if (!index) return;
     let cancelled = false;
-    for (const key of keys)
-      void loadTile(key)
-        .then((cells) => {
-          if (!cancelled) setLoaded((old) => (old[key] ? old : { ...old, [key]: cells }));
-        })
-        .catch(() => {
+    void Promise.all(
+      loadKeys.map(async (key) => {
+        try {
+          return [key, await loadTile(key)] as const;
+        } catch {
           if (!cancelled) setError("Some map areas could not load. Move the map to retry.");
-        });
+          return null;
+        }
+      }),
+    ).then((entries) => {
+      const ready = entries.filter((entry) => entry !== null);
+      if (!cancelled)
+        setLoaded((old) =>
+          ready.every(([key]) => old[key]) ? old : { ...old, ...Object.fromEntries(ready) },
+        );
+    });
     return () => {
       cancelled = true;
     };
-  }, [index, keyList]);
+  }, [index, loadList]);
 
   // Rescore route cells when weather changes.
   const extra = useRef(new Map<string, Cell[]>()),
@@ -291,8 +307,9 @@ export function useStatewide(
     [watchKey, watchCells, forecasts],
   );
 
+  const overviewScores = scores[OVERVIEW];
   const blockScores = useMemo(() => {
-    const raw = scores[OVERVIEW];
+    const raw = overviewScores;
     if (!raw || !blocks) return null;
     const reps = blocks.reduce((n, b) => n + b.reps.length, 0),
       out = new Float32Array(count * blocks.length).fill(-1);
@@ -313,14 +330,23 @@ export function useStatewide(
       });
     }
     return out;
-  }, [scores, blocks, count]);
-  const visible = useMemo<TileScores[]>(
-    () =>
-      keys
-        .filter((k) => loaded[k])
-        .map((k) => ({ key: k, cells: loaded[k], scores: scores[k] ?? null })),
-    [keyList, loaded, scores],
-  );
+  }, [overviewScores, blocks, count]);
+  const previousTiles = useRef<TileScores[]>([]);
+  const visible = useMemo<TileScores[]>(() => {
+    const next = keys
+      .filter((k) => loaded[k])
+      .map((k) => ({ key: k, cells: loaded[k], scores: scores[k] ?? null }));
+    const old = previousTiles.current;
+    if (
+      next.length === old.length &&
+      next.every(
+        (tile, i) =>
+          tile.key === old[i].key && tile.cells === old[i].cells && tile.scores === old[i].scores,
+      )
+    )
+      return old;
+    return (previousTiles.current = next);
+  }, [keyList, loaded, scores]);
   const pending =
     (blocks && !blockScores ? 1 : 0) +
     (detail ? visible.filter((t) => !t.scores && t.cells.length).length : 0);

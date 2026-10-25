@@ -8,7 +8,7 @@ import type {
   CanvasSource,
   LngLatBoundsLike,
 } from "maplibre-gl";
-import type { FeatureCollection } from "geojson";
+import type { Feature, FeatureCollection } from "geojson";
 import { Plus, Minus, LocateFixed, Expand, LoaderCircle } from "lucide-react";
 import type {
   Block,
@@ -79,13 +79,13 @@ type Surface = {
   image: ImageData | null;
   scale: number;
   shown: boolean;
-  pause: ReturnType<typeof setTimeout> | null;
+  painted: { raster: Raster; version: number; hour: number; ground: boolean } | null;
 };
 function surface(id: string): Surface {
   const canvas = document.createElement("canvas"),
     small = document.createElement("canvas");
   canvas.width = canvas.height = small.width = small.height = 1;
-  return { id, canvas, small, raster: null, image: null, scale: 1, shown: true, pause: null };
+  return { id, canvas, small, raster: null, image: null, scale: 1, shown: true, painted: null };
 }
 // Keep raster canvases near 640 px.
 const scaleFor = (r: Raster) =>
@@ -131,6 +131,8 @@ export default function FloodMap({
   const layerRef = useRef(layer);
   layerRef.current = layer;
   const surfaces = useRef<{ overview: Surface; detail: Surface } | null>(null);
+  const waterFeatures = useRef(new Map<string, Map<string | number, Feature>>());
+  const overlayVisibility = useRef<Partial<Record<keyof typeof OVERLAY_LAYERS, boolean>>>({});
   const [ready, setReady] = useState(false),
     [failed, setFailed] = useState(false),
     [now, setNow] = useState(() => Date.now()),
@@ -141,6 +143,15 @@ export default function FloodMap({
     const m = map.current,
       src = m?.getSource(s.id) as CanvasSource | undefined;
     if (!m || !src || !s.raster) return;
+    const hour = playhead.get(),
+      ground = layerRef.current === "ground";
+    if (
+      s.painted?.raster === s.raster &&
+      s.painted.version === s.raster.version &&
+      s.painted.hour === hour &&
+      s.painted.ground === ground
+    )
+      return;
     const small = s.small.getContext("2d"),
       ctx = s.canvas.getContext("2d");
     if (!small || !ctx) return;
@@ -152,21 +163,18 @@ export default function FloodMap({
       s.canvas.width = s.raster.width * s.scale;
       s.canvas.height = s.raster.height * s.scale;
     }
-    paint(s.raster, s.image, playhead.get(), layerRef.current === "ground", dark);
+    paint(s.raster, s.image, hour, ground, dark);
     small.putImageData(s.image, 0, 0);
     ctx.clearRect(0, 0, s.canvas.width, s.canvas.height);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-    if (canFilter(ctx)) ctx.filter = `blur(${(s.scale * 0.55).toFixed(2)}px)`;
+    if (canFilter(ctx)) ctx.filter = `blur(${(s.scale * 0.18).toFixed(2)}px)`;
     ctx.drawImage(s.small, 0, 0, s.canvas.width, s.canvas.height);
     ctx.filter = "none";
-    // Upload only while pixels change; pause shortly after the last frame.
+    // Upload changed pixels once, then leave the texture still while the map moves.
     src.play();
-    if (s.pause) clearTimeout(s.pause);
-    s.pause = setTimeout(() => {
-      src.pause();
-      s.pause = null;
-    }, 150);
+    src.pause();
+    s.painted = { raster: s.raster, version: s.raster.version, hour, ground };
   }
   // Hidden surfaces are skipped during playback and repainted when they are shown again.
   function drawAll(force = false) {
@@ -179,6 +187,7 @@ export default function FloodMap({
       loaded = false,
       restored: typeof keptView = null;
     let observer: ResizeObserver | null = null;
+    let reportTimer: ReturnType<typeof setTimeout> | null = null;
     void import("maplibre-gl")
       .then((lib) => {
         if (!host.current || cancelled) return;
@@ -212,11 +221,16 @@ export default function FloodMap({
             instance.setMinZoom(Math.max(5, Math.min(11, camera.zoom - 0.2)));
         };
         const report = () => {
+          if (reportTimer) clearTimeout(reportTimer);
+          reportTimer = null;
           const b = instance.getBounds();
           viewChange.current({
             bounds: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()],
             zoom: instance.getZoom(),
           });
+        };
+        const reportMoving = () => {
+          reportTimer ??= setTimeout(report, 120);
         };
         instance.on("load", () => {
           if (cancelled) return;
@@ -297,6 +311,7 @@ export default function FloodMap({
           report();
         });
         instance.on("moveend", report);
+        instance.on("move", reportMoving);
         instance.on("click", (e) => {
           const layers = INTERACTIVE.filter(
             (id) =>
@@ -330,6 +345,7 @@ export default function FloodMap({
     return () => {
       cancelled = true;
       observer?.disconnect();
+      if (reportTimer) clearTimeout(reportTimer);
       const m = map.current;
       if (m && loaded) {
         const { lng, lat } = m.getCenter();
@@ -353,8 +369,10 @@ export default function FloodMap({
     const s = surfaces.current,
       m = map.current;
     if (!ready || !s || !m || !overview.blocks?.length) return;
-    s.overview.raster = overviewRaster(overview.blocks, overview.scores);
-    (m.getSource(s.overview.id) as CanvasSource).setCoordinates(s.overview.raster.coordinates);
+    const raster = overviewRaster(overview.blocks, overview.scores, s.overview.raster);
+    if (raster !== s.overview.raster)
+      (m.getSource(s.overview.id) as CanvasSource).setCoordinates(raster.coordinates);
+    s.overview.raster = raster;
     draw(s.overview);
   }, [ready, overview.blocks, overview.scores]);
   // Rebuild the 280 m image for the tiles in view.
@@ -362,9 +380,11 @@ export default function FloodMap({
     const s = surfaces.current,
       m = map.current;
     if (!ready || !s || !m) return;
-    s.detail.raster = detail ? detailRaster(detail) : null;
+    const previous = s.detail.raster;
+    s.detail.raster = detail ? detailRaster(detail, previous) : null;
     if (s.detail.raster) {
-      (m.getSource(s.detail.id) as CanvasSource).setCoordinates(s.detail.raster.coordinates);
+      if (s.detail.raster !== previous)
+        (m.getSource(s.detail.id) as CanvasSource).setCoordinates(s.detail.raster.coordinates);
       draw(s.detail);
     }
   }, [ready, detail]);
@@ -494,10 +514,25 @@ export default function FloodMap({
   function overlay(kind: keyof typeof OVERLAY_LAYERS, data: [string, FeatureCollection][] | null) {
     const m = map.current;
     if (!m) return;
-    for (const [source, fc] of data ?? [])
-      (m.getSource(source) as GeoJSONSource | undefined)?.setData(fc);
-    for (const id of OVERLAY_LAYERS[kind])
-      if (m.getLayer(id)) m.setLayoutProperty(id, "visibility", data ? "visible" : "none");
+    for (const [source, fc] of data ?? []) {
+      const target = m.getSource(source) as GeoJSONSource | undefined;
+      if (!target) continue;
+      if (kind === "water") {
+        const previous = waterFeatures.current.get(source) ?? new Map();
+        const next = new Map(fc.features.map((feature) => [feature.id!, feature]));
+        const add = fc.features.filter((feature) => previous.get(feature.id!) !== feature);
+        const remove = [...previous.keys()].filter((id) => !next.has(id));
+        if (add.length || remove.length)
+          void target.updateData({ add, remove }).catch(console.error);
+        waterFeatures.current.set(source, next);
+      } else void target.setData(fc).catch(console.error);
+    }
+    const visible = !!data;
+    if (overlayVisibility.current[kind] !== visible) {
+      for (const id of OVERLAY_LAYERS[kind])
+        if (m.getLayer(id)) m.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+      overlayVisibility.current[kind] = visible;
+    }
   }
   useEffect(() => {
     if (ready)

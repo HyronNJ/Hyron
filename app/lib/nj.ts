@@ -17,7 +17,7 @@ export const LATTICE = {
 export const TILE_COLS = Math.ceil(LATTICE.cols / LATTICE.tile),
   TILE_ROWS = Math.ceil(LATTICE.rows / LATTICE.tile);
 // Zoom at which the map switches from statewide area summaries to individual 280 m areas.
-export const DETAIL_ZOOM = 11.5;
+export const DETAIL_ZOOM = 10.5;
 
 const ring = (outline as { coordinates: number[][][] }).coordinates[0];
 function inRing(lng: number, lat: number, points: number[][]) {
@@ -69,12 +69,22 @@ export const cellCenter = (col: number, row: number): Coord => ({
 });
 export const tileKey = (col: number, row: number) =>
   `${Math.floor(col / LATTICE.tile)}-${Math.floor(row / LATTICE.tile)}`;
-export function tilesInView(bounds: [number, number, number, number], limit = 12): string[] {
+export function tilesInView(
+  bounds: [number, number, number, number],
+  limit = 12,
+  padding = 0,
+): string[] {
   const [w, s, e, n] = bounds;
-  const c0 = Math.max(0, Math.floor((w - LATTICE.lng0) / LATTICE.dLng / LATTICE.tile)),
-    c1 = Math.min(TILE_COLS - 1, Math.floor((e - LATTICE.lng0) / LATTICE.dLng / LATTICE.tile));
-  const r0 = Math.max(0, Math.floor((s - LATTICE.lat0) / LATTICE.dLat / LATTICE.tile)),
-    r1 = Math.min(TILE_ROWS - 1, Math.floor((n - LATTICE.lat0) / LATTICE.dLat / LATTICE.tile));
+  const c0 = Math.max(0, Math.floor((w - LATTICE.lng0) / LATTICE.dLng / LATTICE.tile) - padding),
+    c1 = Math.min(
+      TILE_COLS - 1,
+      Math.floor((e - LATTICE.lng0) / LATTICE.dLng / LATTICE.tile) + padding,
+    );
+  const r0 = Math.max(0, Math.floor((s - LATTICE.lat0) / LATTICE.dLat / LATTICE.tile) - padding),
+    r1 = Math.min(
+      TILE_ROWS - 1,
+      Math.floor((n - LATTICE.lat0) / LATTICE.dLat / LATTICE.tile) + padding,
+    );
   const cx = (c0 + c1) / 2,
     cy = (r0 + r1) / 2,
     keys: [number, string][] = [];

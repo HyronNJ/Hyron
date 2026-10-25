@@ -57,7 +57,14 @@ export function loadWaterTile(key: string): Promise<WaterFeatures> {
         if (!r.ok) throw new Error("Water paths could not load.");
         return r.json() as Promise<WaterTile>;
       })
-      .then(decodeWaterTile);
+      .then((tile) => {
+        const features = decodeWaterTile(tile);
+        for (const kind of ["lines", "spots"] as const)
+          features[kind].forEach((feature, i) => {
+            feature.id = `${key}:${kind}:${i}`;
+          });
+        return features;
+      });
     p.catch(() => cache.delete(key));
     cache.set(key, p);
   }

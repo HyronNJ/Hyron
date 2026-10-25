@@ -15,28 +15,46 @@ const fc = (features: FeatureCollection["features"]): FeatureCollection => ({
 export function useWaterPaths(enabled: boolean, view: MapView | null, available: string[] | null) {
   const [loaded, setLoaded] = useState<Record<string, WaterFeatures>>({}),
     [failed, setFailed] = useState<string[]>([]);
+  const loadKeys = useMemo(
+    () =>
+      enabled && view && view.zoom >= WATER_ZOOM - 0.5
+        ? tilesInView(view.bounds, 16, 1)
+            .filter((k) => !available || available.includes(k))
+            .sort()
+        : [],
+    [enabled, view, available],
+  );
+  const loadList = loadKeys.join(",");
   const keys = useMemo(
     () =>
       enabled && view && view.zoom >= WATER_ZOOM
-        ? tilesInView(view.bounds, 9).filter((k) => !available || available.includes(k))
+        ? tilesInView(view.bounds, 9)
+            .filter((k) => !available || available.includes(k))
+            .sort()
         : [],
     [enabled, view, available],
   );
   const keyList = keys.join(",");
   useEffect(() => {
     let live = true;
-    for (const k of keys)
-      void loadWaterTile(k)
-        .then((f) => {
-          if (live) setLoaded((o) => (o[k] ? o : { ...o, [k]: f }));
-        })
-        .catch(() => {
+    void Promise.all(
+      loadKeys.map(async (k) => {
+        try {
+          return [k, await loadWaterTile(k)] as const;
+        } catch {
           if (live) setFailed((o) => (o.includes(k) ? o : [...o, k]));
-        });
+          return null;
+        }
+      }),
+    ).then((entries) => {
+      const ready = entries.filter((entry) => entry !== null);
+      if (live)
+        setLoaded((o) => (ready.every(([k]) => o[k]) ? o : { ...o, ...Object.fromEntries(ready) }));
+    });
     return () => {
       live = false;
     };
-  }, [keyList]);
+  }, [loadList]);
   const data = useMemo(() => {
     const lines: FeatureCollection["features"] = [],
       spots: FeatureCollection["features"] = [];
@@ -51,7 +69,7 @@ export function useWaterPaths(enabled: boolean, view: MapView | null, available:
   }, [keyList, loaded]);
   return {
     ...data,
-    active: keys.length > 0,
+    active: keys.length > 0 && !!view && view.zoom >= WATER_ZOOM,
     loading: keys.some((k) => !loaded[k] && !failed.includes(k)),
     error: keys.some((k) => failed.includes(k)),
     zoomTooFar: enabled && !!view && view.zoom < WATER_ZOOM,
